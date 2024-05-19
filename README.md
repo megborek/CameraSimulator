@@ -4,6 +4,7 @@ This project simulates the behavior of an image sensor, including capturing ligh
 
 ## Directory Structure
 
+```
 ImageSensorSimulation/
 ├── CMakeLists.txt
 ├── conanfile.txt
@@ -14,7 +15,7 @@ ImageSensorSimulation/
 ├── app/
 │ └── main.cpp
 └── build/ (created during the build process)
-
+```
 
 ## Requirements
 
@@ -34,7 +35,7 @@ If you do not already have a Conan profile configured, you can run:
 ```sh
 conan profile detect --force
 ```
-See 
+
 ### 2. Build Dependencies
 
 Create a `build` directory in the top-level directory. Change directory to this `build` directory and build the missing dependencies.
