@@ -1,12 +1,27 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <CLI/CLI.hpp>
 #include "ImageSensor.h"
 
-int main()
+int main(int argc, char **argv)
 {
-    // Define the dimensions of the scene
-    const int width = ImageSensor::width;
-    const int height = ImageSensor::height;
+    // Define default values
+    int width = 640;
+    int height = 480;
+    int bitDepth = 16;
+    double noiseLevel = 0.05;
+    std::string cfaPatternStr = "RCCB"; // Default CFA pattern
+
+    // Parse command-line arguments using CLI11
+    CLI::App app{"Image Sensor Simulation"};
+
+    app.add_option("-w,--width", width, "Sensor width in pixels")->default_val(width);
+    app.add_option("-j,--height", height, "Sensor height in pixels")->default_val(height);
+    app.add_option("-b,--bitdepth", bitDepth, "Bit depth of the sensor")->default_val(bitDepth);
+    app.add_option("-n,--noise", noiseLevel, "Noise level (standard deviation of Gaussian noise)")->default_val(noiseLevel);
+    app.add_option("-c,--cfapattern", cfaPatternStr, "CFA pattern (e.g., RCCB)")->default_val(cfaPatternStr);
+
+    CLI11_PARSE(app, argc, argv);
 
     // Create a sample scene (a simple gradient image for demonstration)
     cv::Mat scene(height, width, CV_64FC1);
@@ -18,34 +33,11 @@ int main()
         }
     }
 
-    // Define a sample CFA pattern (RCCB)
-    cv::Mat cfaPattern(height, width, CV_8UC1);
-    for (int i = 0; i < height; ++i)
-    {
-        for (int j = 0; j < width; ++j)
-        {
-            if ((i % 2 == 0) && (j % 2 == 0))
-            {
-                cfaPattern.at<uchar>(i, j) = ImageSensor::RED;
-            }
-            else if ((i % 2 == 0) && (j % 2 == 1))
-            {
-                cfaPattern.at<uchar>(i, j) = ImageSensor::CLEAR;
-            }
-            else if ((i % 2 == 1) && (j % 2 == 0))
-            {
-                cfaPattern.at<uchar>(i, j) = ImageSensor::CLEAR;
-            }
-            else
-            {
-                cfaPattern.at<uchar>(i, j) = ImageSensor::BLUE;
-            }
-        }
-    }
+    // Generate the CFA pattern matrix
+    cv::Mat cfaPattern = ImageSensor::generateCFAPattern(cfaPatternStr, width, height);
 
-    // Create an ImageSensor object with the desired bit depth
-    int bitDepth = 16; // You can change this to 8, 10, 12, 14, 16, 32, or 64
-    ImageSensor sensor(bitDepth);
+    // Create an ImageSensor object with the desired bit depth and dimensions
+    ImageSensor sensor(bitDepth, width, height);
 
     // Simulate capturing light from the scene
     sensor.captureLight(scene);
@@ -55,7 +47,7 @@ int main()
     sensor.applyDiffraction(psf);
 
     // Add noise to the sensor data
-    sensor.addNoise(0.05);
+    sensor.addNoise(noiseLevel);
 
     // Apply the CFA pattern
     sensor.applyCFA(cfaPattern);

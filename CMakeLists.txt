@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 find_package(OpenCV REQUIRED)
+find_package(CLI11 REQUIRED)
 
 # Include directories
 include_directories(${OpenCV_INCLUDE_DIRS})

@@ -1,8 +1,8 @@
 #include "ImageSensor.h"
 
-// Constructor with bit depth parameter
-ImageSensor::ImageSensor(int bitDepth)
-    : bitDepth(bitDepth), distribution(0.0, 1.0)
+// Constructor with bit depth and dimensions parameters
+ImageSensor::ImageSensor(int bitDepth, int width, int height)
+    : bitDepth(bitDepth), width(width), height(height), distribution(0.0, 1.0)
 {
     // Determine the OpenCV type based on the bit depth
     if (bitDepth == 8)
@@ -103,4 +103,42 @@ void ImageSensor::applyDiffraction(const cv::Mat &psf)
     sensor.convertTo(temp, CV_64FC1);  // Convert to double for processing
     cv::filter2D(temp, temp, -1, psf); // Convolve with the PSF
     temp.convertTo(sensor, cvType);    // Convert back to the original type
+}
+
+// Generate CFA pattern matrix based on input string
+cv::Mat ImageSensor::generateCFAPattern(const std::string &patternString, int width, int height)
+{
+    cv::Mat cfaPattern(height, width, CV_8UC1);
+    int patternLength = patternString.length();
+    if (patternLength != 4)
+    {
+        throw std::invalid_argument("CFA pattern string must be 4 characters long (2x2 pattern)");
+    }
+
+    for (int i = 0; i < height; ++i)
+    {
+        for (int j = 0; j < width; ++j)
+        {
+            int patternIndex = (i % 2) * 2 + (j % 2);
+            char patternChar = patternString[patternIndex];
+            switch (patternChar)
+            {
+            case 'R':
+                cfaPattern.at<uchar>(i, j) = ImageSensor::RED;
+                break;
+            case 'G':
+                cfaPattern.at<uchar>(i, j) = ImageSensor::GREEN;
+                break;
+            case 'B':
+                cfaPattern.at<uchar>(i, j) = ImageSensor::BLUE;
+                break;
+            case 'C':
+                cfaPattern.at<uchar>(i, j) = ImageSensor::CLEAR;
+                break;
+            default:
+                throw std::invalid_argument("Invalid CFA pattern character");
+            }
+        }
+    }
+    return cfaPattern;
 }
