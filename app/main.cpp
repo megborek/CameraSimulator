@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include <CLI/CLI.hpp>
 #include "ImageSensor.h"
+#include "CFAPattern.h"
 
 int main(int argc, char **argv)
 {
@@ -10,7 +11,8 @@ int main(int argc, char **argv)
     int height = 480;
     int bitDepth = 16;
     double noiseLevel = 0.05;
-    std::string cfaPatternStr = "RCCB"; // Default CFA pattern
+    std::string cfaPatternStr = "RCCB";    // Default CFA pattern
+    std::vector<std::string> colorWeights; // Existing color weights
 
     // Parse command-line arguments using CLI11
     CLI::App app{"Image Sensor Simulation"};
@@ -20,8 +22,43 @@ int main(int argc, char **argv)
     app.add_option("-b,--bitdepth", bitDepth, "Bit depth of the sensor")->default_val(bitDepth);
     app.add_option("-n,--noise", noiseLevel, "Noise level (standard deviation of Gaussian noise)")->default_val(noiseLevel);
     app.add_option("-c,--cfapattern", cfaPatternStr, "CFA pattern (e.g., RCCB)")->default_val(cfaPatternStr);
+    app.add_option("--color-weight", colorWeights, "Change existing color weight (e.g., R:0.25)");
 
     CLI11_PARSE(app, argc, argv);
+
+    // Create the CFA pattern object
+    CFAPattern cfaPattern(cfaPatternStr, width, height);
+
+    // Change the weights of existing colors
+    for (const auto &weightStr : colorWeights)
+    {
+        if (weightStr.size() >= 3 && weightStr[1] == ':')
+        {
+            char color = weightStr[0];
+            double weight = std::stod(weightStr.substr(2));
+            switch (color)
+            {
+            case 'R':
+                cfaPattern.setColorWeight(CFAPattern::RED, weight);
+                break;
+            case 'G':
+                cfaPattern.setColorWeight(CFAPattern::GREEN, weight);
+                break;
+            case 'B':
+                cfaPattern.setColorWeight(CFAPattern::BLUE, weight);
+                break;
+            case 'C':
+                cfaPattern.setColorWeight(CFAPattern::CLEAR, weight);
+                break;
+            default:
+                std::cerr << "Invalid color code for weight change: " << color << std::endl;
+            }
+        }
+        else
+        {
+            std::cerr << "Invalid format for color weight: " << weightStr << std::endl;
+        }
+    }
 
     // Create a sample scene (a simple gradient image for demonstration)
     cv::Mat scene(height, width, CV_64FC1);
@@ -32,9 +69,6 @@ int main(int argc, char **argv)
             scene.at<double>(i, j) = static_cast<double>(i) / height;
         }
     }
-
-    // Generate the CFA pattern matrix
-    cv::Mat cfaPattern = ImageSensor::generateCFAPattern(cfaPatternStr, width, height);
 
     // Create an ImageSensor object with the desired bit depth and dimensions
     ImageSensor sensor(bitDepth, width, height);
@@ -49,7 +83,7 @@ int main(int argc, char **argv)
     // Add noise to the sensor data
     sensor.addNoise(noiseLevel);
 
-    // Apply the CFA pattern
+    // Apply the custom CFA pattern
     sensor.applyCFA(cfaPattern);
 
     // Demosaic the sensor data to produce a full-color image

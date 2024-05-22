@@ -3,20 +3,11 @@
 
 #include <opencv2/opencv.hpp>
 #include <random>
-#include <string>
+#include "CFAPattern.h"
 
 class ImageSensor
 {
 public:
-    // Enumeration for Color Filter Array pattern including a clear filter
-    enum Color
-    {
-        RED,
-        GREEN,
-        BLUE,
-        CLEAR
-    };
-
     // Constructor: Initializes the sensor array and random noise generator with specified bit depth and dimensions
     ImageSensor(int bitDepth, int width, int height);
 
@@ -34,9 +25,9 @@ public:
 
     /**
      * @brief Applies a Color Filter Array (CFA) to the sensor data, including the option for clear pixels.
-     * @param cfaPattern 2D array defining the CFA pattern (RED, GREEN, BLUE, CLEAR).
+     * @param cfaPattern CFAPattern object defining the CFA pattern.
      */
-    void applyCFA(const cv::Mat &cfaPattern);
+    void applyCFA(const CFAPattern &cfaPattern);
 
     /**
      * @brief Demosaics the sensor data to produce a full-color image.
@@ -49,15 +40,6 @@ public:
      * @param psf cv::Mat representing the point spread function.
      */
     void applyDiffraction(const cv::Mat &psf);
-
-    /**
-     * @brief Generates a CFA pattern matrix based on the input string.
-     * @param patternString String representing the CFA pattern (e.g., "RCCB").
-     * @param width Width of the CFA pattern.
-     * @param height Height of the CFA pattern.
-     * @return cv::Mat representing the CFA pattern.
-     */
-    static cv::Mat generateCFAPattern(const std::string &patternString, int width, int height);
 
 private:
     cv::Mat sensor;                                // Sensor data array

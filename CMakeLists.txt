@@ -22,4 +22,11 @@ add_subdirectory(app)
 add_executable(ImageSensorSimulation app/main.cpp)
 
 # Link libraries
-target_link_libraries(ImageSensorSimulation PRIVATE ImageSensorLibrary ${CONAN_LIBS})
+target_link_libraries(ImageSensorSimulation 
+PRIVATE 
+ImageSensorLibrary
+CFAPatternLibrary
+CLI11::CLI11
+${OpenCV_LIBS}
+${CONAN_LIBS}
+)

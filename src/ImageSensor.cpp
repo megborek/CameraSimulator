@@ -56,29 +56,30 @@ void ImageSensor::addNoise(double noiseLevel)
 }
 
 // Apply Color Filter Array with CLEAR pixel option
-void ImageSensor::applyCFA(const cv::Mat &cfaPattern)
+void ImageSensor::applyCFA(const CFAPattern &cfaPattern)
 {
     cv::Mat temp;
     sensor.convertTo(temp, CV_64FC1); // Convert to double for processing
+    const cv::Mat &pattern = cfaPattern.getPattern();
     for (int i = 0; i < temp.rows; ++i)
     {
         for (int j = 0; j < temp.cols; ++j)
         {
-            Color color = static_cast<Color>(cfaPattern.at<uchar>(i, j));
+            CFAPattern::Color color = static_cast<CFAPattern::Color>(pattern.at<uchar>(i, j));
             double value = temp.at<double>(i, j);
             switch (color)
             {
-            case RED:
-                value *= 0.299;
+            case CFAPattern::RED:
+                value *= cfaPattern.getColorWeight(CFAPattern::RED);
                 break;
-            case GREEN:
-                value *= 0.587;
+            case CFAPattern::GREEN:
+                value *= cfaPattern.getColorWeight(CFAPattern::GREEN);
                 break;
-            case BLUE:
-                value *= 0.114;
+            case CFAPattern::BLUE:
+                value *= cfaPattern.getColorWeight(CFAPattern::BLUE);
                 break;
-            case CLEAR:
-                // No modification needed for clear pixels
+            case CFAPattern::CLEAR:
+                value *= cfaPattern.getColorWeight(CFAPattern::CLEAR);
                 break;
             }
             temp.at<double>(i, j) = value;
@@ -103,42 +104,4 @@ void ImageSensor::applyDiffraction(const cv::Mat &psf)
     sensor.convertTo(temp, CV_64FC1);  // Convert to double for processing
     cv::filter2D(temp, temp, -1, psf); // Convolve with the PSF
     temp.convertTo(sensor, cvType);    // Convert back to the original type
-}
-
-// Generate CFA pattern matrix based on input string
-cv::Mat ImageSensor::generateCFAPattern(const std::string &patternString, int width, int height)
-{
-    cv::Mat cfaPattern(height, width, CV_8UC1);
-    int patternLength = patternString.length();
-    if (patternLength != 4)
-    {
-        throw std::invalid_argument("CFA pattern string must be 4 characters long (2x2 pattern)");
-    }
-
-    for (int i = 0; i < height; ++i)
-    {
-        for (int j = 0; j < width; ++j)
-        {
-            int patternIndex = (i % 2) * 2 + (j % 2);
-            char patternChar = patternString[patternIndex];
-            switch (patternChar)
-            {
-            case 'R':
-                cfaPattern.at<uchar>(i, j) = ImageSensor::RED;
-                break;
-            case 'G':
-                cfaPattern.at<uchar>(i, j) = ImageSensor::GREEN;
-                break;
-            case 'B':
-                cfaPattern.at<uchar>(i, j) = ImageSensor::BLUE;
-                break;
-            case 'C':
-                cfaPattern.at<uchar>(i, j) = ImageSensor::CLEAR;
-                break;
-            default:
-                throw std::invalid_argument("Invalid CFA pattern character");
-            }
-        }
-    }
-    return cfaPattern;
 }
