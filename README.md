@@ -10,9 +10,13 @@ ImageSensorSimulation/
 ├── conanfile.txt
 ├── include/
 │ └── ImageSensor.h
+│ └── CFAPattern.h
 ├── src/
+│ └── CMakeLists.txt
 │ └── ImageSensor.cpp
+│ └── CFAPattern.cpp
 ├── app/
+│ └── CMakeLists.txt
 │ └── main.cpp
 └── build/ (created during the build process)
 ```
@@ -68,3 +72,4 @@ ninja
 
 # DEPENDENCIES #
 * OpenCV 4
+* CLI11
