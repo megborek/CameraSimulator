@@ -1,4 +1,5 @@
 #include "CFAPattern.h"
+#include <iostream>
 
 CFAPattern::CFAPattern(const std::string &patternString, int width, int height)
     : cfaPattern(height, width, CV_8UC1)
@@ -51,6 +52,39 @@ const cv::Mat &CFAPattern::getPattern() const
 void CFAPattern::setColorWeight(Color color, double weight)
 {
     colorWeights[color] = weight;
+}
+
+void CFAPattern::updateColorWeights(const std::vector<std::string> &colorWeights)
+{
+    for (const auto &weightStr : colorWeights)
+    {
+        if (weightStr.size() >= 3 && weightStr[1] == ':')
+        {
+            char color = weightStr[0];
+            double weight = std::stod(weightStr.substr(2));
+            switch (color)
+            {
+            case 'R':
+                setColorWeight(RED, weight);
+                break;
+            case 'G':
+                setColorWeight(GREEN, weight);
+                break;
+            case 'B':
+                setColorWeight(BLUE, weight);
+                break;
+            case 'C':
+                setColorWeight(CLEAR, weight);
+                break;
+            default:
+                std::cerr << "Invalid color code for weight change: " << color << std::endl;
+            }
+        }
+        else
+        {
+            std::cerr << "Invalid format for color weight: " << weightStr << std::endl;
+        }
+    }
 }
 
 double CFAPattern::getColorWeight(Color color) const

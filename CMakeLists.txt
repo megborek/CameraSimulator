@@ -26,6 +26,7 @@ target_link_libraries(ImageSensorSimulation
 PRIVATE 
 ImageSensorLibrary
 CFAPatternLibrary
+SceneGeneratorLibrary
 CLI11::CLI11
 ${OpenCV_LIBS}
 ${CONAN_LIBS}

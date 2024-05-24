@@ -1,4 +1,5 @@
 #include "ImageSensor.h"
+#include <iostream>
 
 // Constructor with bit depth and dimensions parameters
 ImageSensor::ImageSensor(int bitDepth, int width, int height)
@@ -33,14 +34,23 @@ ImageSensor::ImageSensor(int bitDepth, int width, int height)
 // Capture light into the sensor
 void ImageSensor::captureLight(const cv::Mat &scene)
 {
-    scene.convertTo(sensor, cvType, 65535.0); // Scale to full range for higher bit depths
+    if (bitDepth == 8)
+    {
+        scene.convertTo(sensor, cvType, 255.0); // Scale to 8-bit range
+    }
+    else
+    {
+        scene.convertTo(sensor, cvType, 65535.0); // Scale to full range for higher bit depths
+    }
 }
 
 // Add noise to the sensor
 void ImageSensor::addNoise(double noiseLevel)
 {
-    cv::Mat noise(sensor.size(), CV_64FC1); // Always use double for noise generation
-    std::normal_distribution<double> d(0, noiseLevel);
+    cv::Mat noise(sensor.size(), CV_64FC1);            // Create a noise matrix of the same size as the sensor
+    std::normal_distribution<double> d(0, noiseLevel); // Normal distribution with mean 0 and standard deviation noiseLevel
+
+    // Fill the noise matrix with random values from the normal distribution
     for (int i = 0; i < noise.rows; ++i)
     {
         for (int j = 0; j < noise.cols; ++j)
@@ -49,9 +59,48 @@ void ImageSensor::addNoise(double noiseLevel)
         }
     }
 
+    // Debug information to check the noise values
+    double minNoise, maxNoise;
+    cv::minMaxLoc(noise, &minNoise, &maxNoise);
+    std::cout << "Noise min value: " << minNoise << ", max value: " << maxNoise << std::endl;
+
+    // Print the first 10x10 section of the noise matrix
+    std::cout << "Noise matrix (first 10x10 values):" << std::endl;
+    for (int i = 0; i < std::min(10, noise.rows); ++i)
+    {
+        for (int j = 0; j < std::min(10, noise.cols); ++j)
+        {
+            std::cout << noise.at<double>(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    // Add the noise to the sensor data
     cv::Mat temp;
-    sensor.convertTo(temp, CV_64FC1); // Convert sensor to double for addition
-    temp += noise;
+    sensor.convertTo(temp, CV_64FC1); // Convert the sensor data to double for precision
+
+    // Print the first 10x10 section of the image matrix
+    std::cout << "Image matrix (first 10x10 values):" << std::endl;
+    for (int i = 0; i < std::min(10, temp.rows); ++i)
+    {
+        for (int j = 0; j < std::min(10, temp.cols); ++j)
+        {
+            std::cout << temp.at<double>(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    temp += noise; // Add the noise to the sensor data
+
+    std::cout << "Image matrix (first 10x10 values):" << std::endl;
+    for (int i = 0; i < std::min(10, temp.rows); ++i)
+    {
+        for (int j = 0; j < std::min(10, temp.cols); ++j)
+        {
+            std::cout << temp.at<double>(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
     temp.convertTo(sensor, cvType); // Convert back to the original type
 }
 
@@ -79,7 +128,7 @@ void ImageSensor::applyCFA(const CFAPattern &cfaPattern)
                 value *= cfaPattern.getColorWeight(CFAPattern::BLUE);
                 break;
             case CFAPattern::CLEAR:
-                value *= cfaPattern.getColorWeight(CFAPattern::CLEAR);
+                // No modification needed for clear pixels
                 break;
             }
             temp.at<double>(i, j) = value;
@@ -89,12 +138,36 @@ void ImageSensor::applyCFA(const CFAPattern &cfaPattern)
 }
 
 // Demosaic the sensor data
-void ImageSensor::demosaic(cv::Mat &output)
+void ImageSensor::demosaic(cv::Mat &output, const std::string &cfaPatternStr)
 {
     cv::Mat temp;
-    sensor.convertTo(temp, CV_8UC1, 255.0 / 65535.0); // Scale down for demosaicing
-    cv::cvtColor(temp, output, cv::COLOR_BayerBG2BGR);
-    output.convertTo(output, cvType, 65535.0 / 255.0); // Scale up to original type
+    sensor.convertTo(temp, CV_8UC1, 255.0 / ((bitDepth == 8) ? 255.0 : 65535.0)); // Scale down for demosaicing
+
+    int conversionCode;
+    if (cfaPatternStr == "RCCB" || cfaPatternStr == "RGGB")
+    {
+        conversionCode = cv::COLOR_BayerBG2BGR;
+    }
+    else if (cfaPatternStr == "GRBG")
+    {
+        conversionCode = cv::COLOR_BayerGR2BGR;
+    }
+    else if (cfaPatternStr == "GBRG")
+    {
+        conversionCode = cv::COLOR_BayerGB2BGR;
+    }
+    else if (cfaPatternStr == "BGGR")
+    {
+        conversionCode = cv::COLOR_BayerRG2BGR;
+    }
+    else
+    {
+        std::cerr << "Warning: Unsupported CFA pattern string for demosaicing. Defaulting to cv::COLOR_BayerBG2BGR." << std::endl;
+        conversionCode = cv::COLOR_BayerBG2BGR;
+    }
+
+    cv::cvtColor(temp, output, conversionCode);
+    output.convertTo(output, cvType, ((bitDepth == 8) ? 255.0 : 65535.0) / 255.0); // Scale up to original type
 }
 
 // Apply optical diffraction by convolving with a PSF
