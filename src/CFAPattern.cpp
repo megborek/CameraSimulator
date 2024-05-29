@@ -1,4 +1,4 @@
-#include "CFAPattern.h"
+#include "CFAPattern/CFAPattern.h"
 #include <iostream>
 
 CFAPattern::CFAPattern(const std::string &patternString, int width, int height)

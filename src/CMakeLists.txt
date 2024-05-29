@@ -1,11 +1,24 @@
-# Add the source files for the ImageSensor and CFAPattern libraries
-add_library(ImageSensorLibrary ImageSensor.cpp)
-add_library(CFAPatternLibrary CFAPattern.cpp)
-add_library(SceneGeneratorLibrary SceneGenerator.cpp)
-add_library(ISPLibrary ISP.cpp)
+# Include directories
+include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Link OpenCV to the ImageSensor and CFAPattern libraries
-target_link_libraries(ImageSensorLibrary PRIVATE ${OpenCV_LIBS})
-target_link_libraries(CFAPatternLibrary PRIVATE ${OpenCV_LIBS})
-target_link_libraries(SceneGeneratorLibrary PRIVATE ${OpenCV_LIBS})
-target_link_libraries(ISPLibrary PRIVATE ${OpenCV_LIBS})
+# Add core source files
+set(CORE_SOURCES
+    ImageSensor.cpp
+    CFAPattern.cpp
+    SceneGenerator.cpp
+    ISP.cpp
+)
+
+set(CORE_HEADERS
+    ${CMAKE_SOURCE_DIR}/include/ImageSensor/ImageSensor.h
+    ${CMAKE_SOURCE_DIR}/include/CFAPattern/CFAPattern.h
+    ${CMAKE_SOURCE_DIR}/include/SceneGenerator/SceneGenerator.h
+    ${CMAKE_SOURCE_DIR}/include/ISP/ISP.h
+)
+
+# Create a library for core components
+add_library(core ${CORE_SOURCES} ${CORE_HEADERS})
+
+# Link necessary libraries to the core
+find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc photo)
+target_link_libraries(core ${OpenCV_LIBS})

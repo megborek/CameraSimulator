@@ -1,4 +1,4 @@
-#include "ImageSensor.h"
+#include "ImageSensor/ImageSensor.h"
 #include <iostream>
 
 // Constructor with bit depth and dimensions parameters
@@ -92,7 +92,7 @@ void ImageSensor::addNoise(double noiseLevel)
 
     temp += noise; // Add the noise to the sensor data
 
-    std::cout << "Image matrix (first 10x10 values):" << std::endl;
+    std::cout << "Image matrix (first 10x10 values after adding noise):" << std::endl;
     for (int i = 0; i < std::min(10, temp.rows); ++i)
     {
         for (int j = 0; j < std::min(10, temp.cols); ++j)

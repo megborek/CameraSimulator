@@ -3,7 +3,7 @@
 
 #include <opencv2/opencv.hpp>
 #include <random>
-#include "CFAPattern.h"
+#include "CFAPattern/CFAPattern.h"
 
 class ImageSensor
 {
